@@ -34,20 +34,62 @@ void checkAcceptance(set<char> &setS,vector<char> &fin)
     return;
 }
 
-set<char> ecloseFunc(vector<set<char> > &vEpsilon, vector<char> &state, char toCheck)
+vector<char> eClose(vector<set<char> > &vEpsilon, vector<char> &state, char ch)
 {
-    set<char> toReturn;
+    set<char> processing;
 
-    int idx = idxFinder(state,toCheck);
+    vector< char > toRet;
+
+    int idx = idxFinder(state, ch);//oi borner index neo
 
     //to work here.
+
+    processing = vEpsilon[idx];// oi index epsilon diye koi koi jai
+
+    int id = 0;
+
+    for(auto c: processing)
+        toRet.push_back(c);//seta age vector e push kore rakho.
+
+    while( id <= toRet.size())
+    {
+        if(id == toRet.size() and id > 0)
+            break;
+
+        processing.clear();
+
+        int pt = idxFinder(state,toRet[id]);//id theke character niye kaaj shuru koro.
+
+        processing = vEpsilon[pt];//oi character er epsilon diye transition niye neo.
+
+        for(auto chr: processing)
+        {
+            bool flag = true;
+
+            for(int j = 0; j < toRet.size(); j++)
+            {
+                if(toRet[j] == chr)
+                {
+                    flag = false;
+                }
+            }
+
+            if(flag)
+                toRet.push_back(chr);//jara jara eri majhe input hoi nai, tader ke input kore neo.
+        }
+        id++;// a queue data structure implementation with pointer like index.
+    }
+    return toRet;
 }
+
+
+
 
 int main()
 {
     int numState,numAlphabet, startState, finState;
     vector<char> state, alphabet, start, finish;
-    vector<set<char> > vZero,vOne,vEpsilon;
+    vector<set<char> > vZero,vOne,vEpsilon,vClosed;
 
     set<char> startSet, boroSet;
     string input;
@@ -146,10 +188,41 @@ int main()
         vEpsilon.push_back(setEpsilon);
         setEpsilon.clear();
 
+
     }
 
 
     //eclose of all states.
+
+    for(int i = 0; i < state.size(); i++)
+    {
+        vector <char> temp = eClose( vEpsilon, state, state[i]);
+
+        set<char> toInsert;
+
+        for(auto ch: temp)
+            toInsert.insert(ch);
+
+        vClosed.push_back(toInsert);
+        toInsert.clear();
+
+
+    }
+
+    // Eclose set printing:
+
+    for(int i = 0; i < state.size() ; i++)
+    {
+        cout<< state[i] <<" :  \t\t\t";
+
+        cout<<"{ ";
+        for(auto ch: vClosed[i])
+        {
+            cout << ch << " ";
+        }
+        cout<<"}"<<endl;
+    }
+    //eclose set printing done.
 
 
     for(int i = 0; i < start.size(); i++)
@@ -282,6 +355,110 @@ int main()
     }
 
 
+    //tweaking for epsilon closed NFA.
+    dfa.clear();
+    cout<<endl<<endl<<endl <<"Now let us transition to DFA, given that epsilon transition is a valid operation!!!\n\n\n";
+    id = 0;
+
+    startSet.clear();
+
+    /*
+    for(auto k: start)
+        startSet.insert(k);*/
+
+    //startSet = vClosed[0];
+
+    for(auto k: vClosed[0])
+        startSet.insert(k);
+
+    dfa.push_back(startSet);
+
+    while(id <= dfa.size())
+    {
+        if(id == dfa.size() and id > 0)
+            break;
+
+        cout<<"{ ";
+        for(auto cc: dfa[id])
+        {
+            cout<<cc<<" ";
+        }cout<<"}   ||  ";
+
+
+        set<char> temp1,temp2, tempOne, tempTwo;
+
+        for(auto k:dfa[id])
+        {
+            int idx = idxFinder(state,k);
+
+            for(auto chars: vZero[idx])
+            {
+                temp1.insert(chars);
+            }
+
+            for(auto chars: temp1)
+            {
+                int pt = idxFinder(state, chars);
+
+                for(auto chr: vClosed[pt])
+                    tempOne.insert(chr);
+            }
+
+            for(auto chars: vOne[idx])
+            {
+                temp2.insert(chars);
+            }
+
+            for(auto chars: temp2)
+            {
+                int pt = idxFinder(state, chars);
+
+                for(auto chr: vClosed[pt])
+                    tempTwo.insert(chr);
+            }
+
+        }
+
+        cout<<"{ ";
+        for(auto cc: tempOne)
+        {
+            cout<<cc<<" ";
+        }cout<<"}   ||  ";
+
+
+        cout<<"{ ";
+        for(auto cc: tempTwo)
+        {
+            cout<<cc<<" ";
+        }cout<<"}\n\n";
+
+
+        bool flag = true;
+        for(int i = 0; i < dfa.size(); i++)
+        {
+            if(dfa[i] == tempOne)
+                flag = false;
+        }
+
+        if(flag)
+            dfa.push_back(tempOne);
+
+        flag = true;
+
+        for(int i = 0; i < dfa.size(); i++)
+        {
+            if(dfa[i] == tempTwo)
+                flag = false;
+        }
+
+        if(flag)
+            dfa.push_back(tempTwo);
+
+        id++;
+
+    }
+
+
 
     return 0;
 
@@ -320,5 +497,19 @@ a b c d e
 1 e
 00110111100111111111001010101010
 
+*/
+//The following one is the input for epsilon transition.
+/*
+4
+a b c d
+2
+0 1
+1 a
+1 d
+2 a b 1 a 2 a c
+0 1 c 1 b
+1 d 0 2 b c
+1 d 1 d 1 d
+001100110011010000
 */
 
